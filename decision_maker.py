@@ -1,7 +1,10 @@
 import openai
 import base64
+import os
+from dotenv import load_dotenv
 
-openai.api_key = "YOUR_OPENAI_API_KEY"  # ← энд өөрийн API key-г оруул
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def analyze_chart(image_path):
     with open(image_path, "rb") as image_file:
