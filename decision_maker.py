@@ -1,25 +1,50 @@
-import random
+import openai
+import base64
+
+openai.api_key = "YOUR_OPENAI_API_KEY"  # ← энд өөрийн API key-г оруул
 
 def analyze_chart(image_path):
-    # ⛔️ Энд жинхэнэ OpenCV/AI анализ хийгдэх ёстой
-    # Туршилтын горим: random шийдвэр гаргана
-    decision = random.choice([True, False])
-    
-    if decision:
-        direction = random.choice(["BUY", "SELL"])
-        entry_price = round(random.uniform(2280, 2300), 2)
-        sl = entry_price - 3 if direction == "BUY" else entry_price + 3
-        tp1 = entry_price + 3 if direction == "BUY" else entry_price - 3
-        tp2 = entry_price + 5 if direction == "BUY" else entry_price - 5
-        tp3 = entry_price + 8 if direction == "BUY" else entry_price - 8
+    with open(image_path, "rb") as image_file:
+        base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+
+    response = openai.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "Та туршлагатай scalp трейдер. Зураг дээр үндэслэн зөвхөн BUY, SELL, эсвэл NO TRADE шийдвэр гаргана уу. Хэрвээ оролт боломжтой бол entry, SL, TP1, TP2, TP3 утгуудыг заавал өгнө үү."},
+            {"role": "user", "content": [
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/png;base64,{base64_image}"
+                    }
+                }
+            ]}
+        ],
+        max_tokens=500
+    )
+
+    result = response.choices[0].message.content
+    print(f"🤖 GPT шийдвэр:\n{result}")
+
+    if "NO TRADE" in result.upper():
+        return None
+
+    try:
+        # GPT хариултаас үнэ гаргаж авах (prompt-оос шалтгаална)
+        lines = result.strip().splitlines()
+        parsed = {}
+        for line in lines:
+            if ":" in line:
+                key, val = line.split(":")
+                parsed[key.strip().lower()] = float(val.strip())
 
         return {
-            "direction": direction,
-            "entry": entry_price,
-            "sl": round(sl, 2),
-            "tp1": round(tp1, 2),
-            "tp2": round(tp2, 2),
-            "tp3": round(tp3, 2)
+            "direction": "BUY" if "buy" in result.lower() else "SELL",
+            "entry": parsed.get("entry"),
+            "sl": parsed.get("sl"),
+            "tp1": parsed.get("tp1"),
+            "tp2": parsed.get("tp2"),
+            "tp3": parsed.get("tp3")
         }
-    else:
+    except:
         return None
