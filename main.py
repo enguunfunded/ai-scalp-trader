@@ -1,6 +1,7 @@
 from chart_capture import capture_chart
 from decision_maker import analyze_chart
 from entry_manager import execute_trade
+from log_writer import log_trade
 import time
 
 def main_loop():
@@ -10,12 +11,13 @@ def main_loop():
         signal = analyze_chart(image_path)
 
         if signal:
-            print(f"✅ Шийдвэр гарлаа: {signal}")
+            print(f"✅ GPT шийдвэрээр оролт хийгдэж байна: {signal}")
             execute_trade(signal)
+            log_trade(signal)
         else:
-            print("⏭ Орж болох нөхцөл бүрдээгүй.")
+            print("⏭ GPT: Орж болох нөхцөл бүрдээгүй.")
 
-        time.sleep(60)  # 1 минут тутамд ажиллана
+        time.sleep(60)
 
 if __name__ == "__main__":
     main_loop()
